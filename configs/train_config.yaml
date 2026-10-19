@@ -1,0 +1,65 @@
+# Q-VAIDYA training configuration (values follow Section 3.2 of the paper)
+
+model:
+  name_or_path: meta-llama/Llama-4-Scout-17B-16E-Instruct
+  load_in_8bit: true
+  llm_int8_threshold: 6.0
+  torch_dtype: bfloat16
+  device_map: auto            # shards the 8-bit backbone across all visible GPUs
+  patch_router: true          # defensive MoE router output unpacking (Section 3.2.1)
+
+lora:
+  r: 64
+  alpha: 128
+  dropout: 0.05
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+
+data:
+  max_length: 2048
+  val_ratio: 0.05
+  seed: 42
+  sources:
+    pubmedqa:
+      enabled: true
+      hf_id: qiaojin/PubMedQA
+      config: pqa_labeled
+      split: train
+      num_samples: 1000
+    medqa:
+      enabled: true
+      hf_id: GBaker/MedQA-USMLE-4-options
+      split: train
+      num_samples: 1000
+    awesome_medical:
+      enabled: true
+      # Local folder / JSONL or a Hugging Face dataset id with question, answer
+      # and optional image columns.
+      path: data/awesome_medical
+      question_field: question
+      answer_field: answer
+      image_field: image
+      num_samples: 2991
+
+training:
+  output_dir: outputs/q-vaidya
+  num_train_epochs: 10
+  per_device_train_batch_size: 2
+  per_device_eval_batch_size: 2
+  gradient_accumulation_steps: 16
+  learning_rate: 2.0e-4
+  warmup_ratio: 0.03
+  lr_scheduler_type: cosine
+  max_grad_norm: 0.3
+  optim: paged_adamw_8bit
+  bf16: true
+  gradient_checkpointing: true
+  logging_steps: 10
+  save_total_limit: 3
+  report_to: none

@@ -1,0 +1,32 @@
+# Q-VAIDYA evaluation configuration (Section 3.2.7)
+
+model:
+  name_or_path: meta-llama/Llama-4-Scout-17B-16E-Instruct
+  adapter_path: outputs/q-vaidya/best_adapter   # set to null to evaluate the base model
+  load_in_8bit: true                             # false -> BF16 baseline
+  llm_int8_threshold: 6.0
+  torch_dtype: bfloat16
+  device_map: auto
+  patch_router: true
+
+benchmarks:
+  pubmedqa:
+    enabled: true
+    hf_id: qiaojin/PubMedQA
+    config: pqa_labeled
+    split: train
+    num_samples: 1000
+  medqa:
+    enabled: true
+    hf_id: GBaker/MedQA-USMLE-4-options
+    split: test
+    num_samples: 1000
+  vqa_rad:
+    enabled: true
+    hf_id: flaviagiammarino/vqa-rad
+    split: test
+    num_samples: 100
+    max_new_tokens: 32
+
+ece_bins: 15
+output_dir: outputs/eval
